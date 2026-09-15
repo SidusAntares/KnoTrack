@@ -5,5 +5,7 @@ from pathlib import Path
 class ScanFile:
   title:str
   content:str
+  content_hash:str
   size:int
   path:Path
+

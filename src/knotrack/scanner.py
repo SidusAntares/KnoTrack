@@ -1,5 +1,6 @@
 from pathlib import Path
 from .model import ScanFile
+import hashlib
 support_suffix = [".md"]
 support_ignore_dir = [".git",".vscode","__pycache__"]
 
@@ -27,11 +28,13 @@ def scan_doc(path: Path):
         for file in sorted(f.iterdir(),key = lambda x : x.name.casefold()):
             yield from scan_doc(file)
     else:
+        content = f.read_text(encoding="utf-8")
         scanfile = ScanFile(
-            title=f.stem,
-            content=f.read_text(encoding="utf-8"),
-            size=f.stat().st_size,
-            path=f
+            title = f.stem,
+            content = content,
+            content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            size = f.stat().st_size,
+            path = f
         )
         yield scanfile
 

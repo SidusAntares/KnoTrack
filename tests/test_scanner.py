@@ -1,5 +1,6 @@
 from knotrack.scanner import  scan_doc as scanner
 import pytest
+import hashlib
 
 def test_scan_simple_md(tmp_path):
     md_path = tmp_path / "test_scan_simple_md.md"
@@ -63,3 +64,9 @@ def test_scan_absence_path(tmp_path):
     with pytest.raises(FileNotFoundError) :
         list(scanner(absence_path))
 
+def test_scan_content_hash(tmp_path):
+    md_path = tmp_path / "test_scan_content_hash.md"
+    md_path.write_text("# Test\n\nThis is a test file for content hash.")
+    expected_hash = list(scanner(md_path))[0].content_hash
+    md_path.write_text("# Test\n\nThis is a modified test file for content hash.")
+    assert list(scanner(md_path))[0].content_hash != expected_hash
