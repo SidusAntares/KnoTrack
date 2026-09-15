@@ -12,3 +12,6 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.12.14,<0.13"]
 build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+addopts = "--basetemp=.pytest_tmp"
