@@ -65,8 +65,11 @@ def test_scan_absence_path(tmp_path):
         list(scanner(absence_path))
 
 def test_scan_content_hash(tmp_path):
-    md_path = tmp_path / "test_scan_content_hash.md"
-    md_path.write_text("# Test\n\nThis is a test file for content hash.")
-    expected_hash = list(scanner(md_path))[0].content_hash
-    md_path.write_text("# Test\n\nThis is a modified test file for content hash.")
-    assert list(scanner(md_path))[0].content_hash != expected_hash
+    md_path1 = tmp_path / "test_scan_content_hash1.md"
+    md_path1.write_text("# Test\n\nThis is a test file for content hash.")
+    expected_hash = list(scanner(md_path1))[0].content_hash
+    md_path1.write_text("# Test\n\nThis is a modified test file for content hash.")
+    assert list(scanner(md_path1))[0].content_hash != expected_hash
+    md_path2 = tmp_path / "test_scan_content_hash2.md"
+    md_path2.write_text("# Test\n\nThis is a modified test file for content hash.")
+    assert list(scanner(md_path1))[0].content_hash == list(scanner(md_path2))[0].content_hash
