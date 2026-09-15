@@ -7,4 +7,3 @@ class ScanFile:
   content:str
   size:int
   path:Path
-  
