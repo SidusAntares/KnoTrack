@@ -67,10 +67,10 @@ def test_path_unique(tmp_path):
         )
     db.insert_scan_doc(scan_doc)
     with pytest.raises(sqlite3.IntegrityError):
-        db.insert_scan_doc(scan_doc)  # Attempt to insert the same document again
+        db.insert_scan_doc(scan_doc)
+        # Attempt to insert the same document again
 
-
-    db.close()  # The second insert should be ignored, so both checks should return the same document
+    db.close()
 
 def test_database_consistent_data(tmp_path):
     db_path = tmp_path / "test.db"
@@ -86,6 +86,6 @@ def test_database_consistent_data(tmp_path):
     db.close()
     db = Database(str(db_path))
     checked_doc = db.get_scan_doc(str(scan_doc.path))
-    assert checked_doc is not None
+    assert checked_doc == scan_doc  # Ensure that the data is consistent after reopening the database
 
     db.close()
