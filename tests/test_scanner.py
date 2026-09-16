@@ -1,6 +1,5 @@
-from knotrack.scanner import  scan_doc as scanner
+from knotrack import  scan_doc as scanner
 import pytest
-import hashlib
 
 def test_scan_simple_md(tmp_path):
     md_path = tmp_path / "test_scan_simple_md.md"
