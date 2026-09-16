@@ -1,7 +1,6 @@
 import sqlite3
-from .scanner import scan_doc
 from .model import ScanDoc
-
+from pathlib import Path
 class Database:
     def __init__(self, db_path: str):
         self.conn = sqlite3.connect(db_path)
@@ -11,7 +10,7 @@ class Database:
         cursor = self.conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS DOCUMENTS (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY,
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 content_hash TEXT NOT NULL,
@@ -24,19 +23,25 @@ class Database:
     def insert_scan_doc(self, scan_doc: ScanDoc):
         cursor = self.conn.cursor()
         cursor.execute('''
-            INSERT OR IGNORE INTO DOCUMENTS (title, content, content_hash, size, path)
+            INSERT INTO DOCUMENTS (title, content, content_hash, size, path)
             VALUES (?, ?, ?, ?, ?)
         ''', (scan_doc.title, scan_doc.content, scan_doc.content_hash, scan_doc.size, str(scan_doc.path)))
         self.conn.commit()
 
-    def check_scan_doc(self,path: str):
+    def get_scan_doc(self,path: str):
         cursor = self.conn.cursor()
         cursor.execute('''
-        SELECT * FROM DOCUMENTS WHERE path = ?
+        SELECT TITLE, CONTENT, CONTENT_HASH, SIZE, PATH FROM DOCUMENTS WHERE path = ?
         ''',(path,))
-        scan_doc = cursor.fetchall()
+        scan_doc = cursor.fetchone()
         if scan_doc:
-            return ScanDoc(*scan_doc[0][1:])
+            return ScanDoc(
+                title=scan_doc[0],
+                content=scan_doc[1],
+                content_hash=scan_doc[2],
+                size=scan_doc[3],
+                path=Path(scan_doc[4])
+            )
         return None
 
     def close(self):
