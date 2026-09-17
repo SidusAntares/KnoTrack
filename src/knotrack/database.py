@@ -7,8 +7,7 @@ class Database:
         self.create_table()
 
     def create_table(self):
-        cursor = self.conn.cursor()
-        cursor.execute('''
+        self.conn.execute('''
             CREATE TABLE IF NOT EXISTS DOCUMENTS (
                 id INTEGER PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -21,19 +20,16 @@ class Database:
         self.conn.commit()
 
     def insert_scan_doc(self, scan_doc: ScanDoc):
-        cursor = self.conn.cursor()
-        cursor.execute('''
+        self.conn.execute('''
             INSERT INTO DOCUMENTS (title, content, content_hash, size, path)
             VALUES (?, ?, ?, ?, ?)
         ''', (scan_doc.title, scan_doc.content, scan_doc.content_hash, scan_doc.size, str(scan_doc.path)))
         self.conn.commit()
 
     def get_scan_doc(self,path: str):
-        cursor = self.conn.cursor()
-        cursor.execute('''
+        scan_doc = self.conn.execute('''
         SELECT TITLE, CONTENT, CONTENT_HASH, SIZE, PATH FROM DOCUMENTS WHERE path = ?
-        ''',(path,))
-        scan_doc = cursor.fetchone()
+        ''',(path,)).fetchone()
         if scan_doc:
             return ScanDoc(
                 title=scan_doc[0],
@@ -43,6 +39,14 @@ class Database:
                 path=Path(scan_doc[4])
             )
         return None
+
+    def update_scan_doc(self, scan_doc: ScanDoc):
+        self.conn.execute('''
+            UPDATE DOCUMENTS
+            SET title = ?, content = ?, content_hash = ?, size = ?
+            WHERE path = ?
+        ''', (scan_doc.title, scan_doc.content, scan_doc.content_hash, scan_doc.size, str(scan_doc.path)))
+        self.conn.commit()
 
     def close(self):
         self.conn.close()
