@@ -89,3 +89,38 @@ def test_database_consistent_data(tmp_path):
     assert checked_doc == scan_doc  # Ensure that the data is consistent after reopening the database
 
     db.close()
+
+def test_update_scan_doc(tmp_path):
+    db_path = tmp_path / "test.db"
+    db = Database(str(db_path))
+
+    # Create and insert a new scan document
+    scan_doc = ScanDoc(
+        title="Test Scan",
+        content="This is a test scan",
+        content_hash="abc123",
+        size=123,
+        path=tmp_path / "test_scan.md"
+    )
+    db.insert_scan_doc(scan_doc)
+
+    # Update the scan document
+    updated_scan_doc = ScanDoc(
+        title="Updated Test Scan",
+        content="This is an updated test scan",
+        content_hash="def456",
+        size=456,
+        path=tmp_path / "test_scan.md"
+    )
+    db.update_scan_doc(updated_scan_doc)
+
+    # Retrieve the updated scan document and check its values
+    checked_doc = db.get_scan_doc(str(updated_scan_doc.path))
+    assert checked_doc is not None
+    assert checked_doc.title == updated_scan_doc.title
+    assert checked_doc.content == updated_scan_doc.content
+    assert checked_doc.content_hash == updated_scan_doc.content_hash
+    assert checked_doc.size == updated_scan_doc.size
+    assert checked_doc.path == updated_scan_doc.path
+
+    db.close()
