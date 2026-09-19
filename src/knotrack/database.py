@@ -48,5 +48,21 @@ class Database:
         ''', (scan_doc.title, scan_doc.content, scan_doc.content_hash, scan_doc.size, str(scan_doc.path)))
         self.conn.commit()
 
+    def search_scan_docs(self, query: str):
+        cursor = self.conn.execute('''
+            SELECT TITLE, CONTENT, CONTENT_HASH, SIZE, PATH FROM DOCUMENTS
+            WHERE title LIKE ? OR content LIKE ?
+        ''', (f'%{query}%', f'%{query}%'))
+        results = []
+        for row in cursor:
+            results.append(ScanDoc(
+                title=row[0],
+                content=row[1],
+                content_hash=row[2],
+                size=row[3],
+                path=Path(row[4])
+            ))
+        return results
+
     def close(self):
         self.conn.close()
