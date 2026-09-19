@@ -60,9 +60,13 @@ def test_path_unique(tmp_path, db):
         db.insert_scan_doc(scan_doc)
         # Attempt to insert the same document again
 
-def test_database_consistent_data(tmp_path, db):
+def test_database_consistent_data(tmp_path):
+    db_path = tmp_path / "test.db"
+    db = Database(str(db_path))
     scan_doc = make_scan_doc(tmp_path)
     db.insert_scan_doc(scan_doc)
+    db.close()  # Close the database to simulate reopening
+    db = Database(str(db_path))
     checked_doc = db.get_scan_doc(str(scan_doc.path))
     assert checked_doc == scan_doc  # Ensure that the data is consistent after reopening the database
 

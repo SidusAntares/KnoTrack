@@ -1,4 +1,4 @@
-from knotrack import Database
+from .database import Database
 
 def search_documents(query: str,db: Database, limit: int = 20):
     """

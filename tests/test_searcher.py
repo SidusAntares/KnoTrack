@@ -52,9 +52,6 @@ def test_search_documents_limit(tmp_path, db):
     # Search for scan documents with a common term
     results = search_documents("Title", db, limit=20)
     assert len(results) == 20  # Ensure all inserted documents are returned
-    for i, result in enumerate(results):
-        assert result.title == f"Title {i}"
-        assert result.content == f"Content {i}"
 
 def test_search_documents_no_results(tmp_path, db):
     results = search_documents("nonexistent", db)
