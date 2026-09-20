@@ -1,6 +1,6 @@
 from knotrack import cli
 from knotrack import Database
-import sys
+
 
 def test_cli_index(tmp_path):
     # Create a temporary markdown file
@@ -15,7 +15,7 @@ def test_cli_index(tmp_path):
     # Check if the database file was created
     db = tmp_path / "test.db"
     assert db.exists(), "Database file was not created."
-    db = cli.Database(db)
+    db = Database(db)
     scan_doc = db.get_scan_doc(str(temp_doc))
     assert scan_doc is not None, "Document was not indexed."
     db.close()
@@ -60,10 +60,14 @@ def test_cli_search(tmp_path, capsys):
         str(temp_doc) in captured.out
     ), "Document was not found in search results."
 
-def test_cli_search_no_matches(tmp_path):
+def test_cli_search_no_matches(tmp_path, capsys):
     # Run the search command with a query that has no matches
     cli.main(["search", "Nonexistent Document",
               "--db", str(tmp_path / "test.db")])
+    captured = capsys.readouterr()
+    assert (
+            "Title:" not in captured.out
+                ), "Unexpected search results found."
 
 def test_cli_search_with_limit(tmp_path, capsys):
     temp_doc1 = tmp_path / "test1.md"
@@ -86,7 +90,7 @@ def test_cli_search_with_limit(tmp_path, capsys):
         captured.out.count("Title:") == 2
             ),"Search results exceeded the specified limit."
 
-def test_cli_main_no_command(tmp_path, capsys):
+def test_cli_main_no_command(capsys):
     # Run the CLI with no command
     cli.main([])
     captured = capsys.readouterr()
