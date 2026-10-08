@@ -24,6 +24,10 @@ def make_scan_doc(tmp_path,
         path=tmp_path / doc_name
     )
 
+# ---------------------------------------------------------------------------
+# Search results
+# ---------------------------------------------------------------------------
+
 def test_search_documents_with_results(tmp_path, db):
     # Create and insert multiple scan documents
     scan_doc1 = make_scan_doc(tmp_path, title="First Document", content="This is the first test document.")
@@ -43,6 +47,15 @@ def test_search_documents_with_results(tmp_path, db):
     results = search_documents("document", db)
     assert len(results) == 3
 
+def test_search_documents_no_results(tmp_path, db):
+    results = search_documents("nonexistent", db)
+    assert len(results) == 0
+
+
+# ---------------------------------------------------------------------------
+# Result limiting
+# ---------------------------------------------------------------------------
+
 def test_search_documents_limit(tmp_path, db):
     # Insert multiple scan documents
     for i in range(30):
@@ -53,6 +66,22 @@ def test_search_documents_limit(tmp_path, db):
     results = search_documents("Title", db, limit=20)
     assert len(results) == 20  # Ensure all inserted documents are returned
 
-def test_search_documents_no_results(tmp_path, db):
-    results = search_documents("nonexistent", db)
-    assert len(results) == 0
+
+def test_search_documents_limit_returns_top_ranked(tmp_path, db):
+    """A limit keeps the strongest matches rather than an arbitrary slice of them.
+
+    The three documents mention the term with decreasing frequency and all have the same
+    length, so the ranking is fixed. They are inserted weakest-first, so taking the best two
+    cannot come from insertion order, and a limit applied to the wrong end of the ranked
+    list would return the two weakest instead.
+    """
+    best = make_scan_doc(tmp_path, title="Best", content="needle needle needle needle needle", doc_name="best.md")
+    middle = make_scan_doc(tmp_path, title="Middle", content="needle needle filler filler filler", doc_name="middle.md")
+    weakest = make_scan_doc(tmp_path, title="Weakest", content="needle filler filler filler filler", doc_name="weakest.md")
+
+    for doc in (weakest, middle, best):
+        db.insert_scan_doc(doc)
+
+    results = search_documents("needle", db, limit=2)
+
+    assert [doc.path for doc in results] == [best.path, middle.path]

@@ -24,6 +24,10 @@ def make_scan_doc(tmp_path,
         path=tmp_path / doc_name
     )
 
+# ---------------------------------------------------------------------------
+# Database initialization and document storage
+# ---------------------------------------------------------------------------
+
 def test_initialize_database(tmp_path):
     # Test that the database initializes correctly
     db_path = tmp_path / "test.db"
@@ -89,6 +93,10 @@ def test_update_scan_doc(tmp_path):
     assert checked_doc is not None
     assert checked_doc == updated_scan_doc
 
+# ---------------------------------------------------------------------------
+# Searching stored documents
+# ---------------------------------------------------------------------------
+
 def test_search_scan_doc_by_title(tmp_path, db):
     # Create and insert a new scan document
     scan_doc = make_scan_doc(tmp_path, title="Unique Title")
@@ -133,12 +141,12 @@ def test_search_scan_doc_no_results(tmp_path, db):
 
 
 # ---------------------------------------------------------------------------
-# FTS5 index tests (named test_fts5_<target>_<behaviour>)
+# FTS5 index maintenance (named test_fts5_<target>_<behaviour>)
 #
-# These tests describe the observable behaviour of the search index: they go
-# through the Database API (plus the plain `documents` table) and never inspect
-# the FTS table itself. Results are compared as sets, so no test depends on the
-# order in which matches come back.
+# These tests describe the observable behaviour of the index: they go through the
+# Database API (plus the plain `documents` table) and never inspect the FTS table
+# itself. They assert on which documents match, not on the order they come back in,
+# so results are compared as sets. Ordering is covered by the ranking section below.
 # ---------------------------------------------------------------------------
 
 def build_database_without_fts5(db_path, tmp_path, docs=None):
@@ -365,3 +373,30 @@ def test_fts5_init_recovers_when_trigger_creation_fails(tmp_path, monkeypatch):
         assert paths_of(db.search_scan_docs("recoverytoken")) == {doc.path}
     finally:
         db.close()
+
+
+# ---------------------------------------------------------------------------
+# FTS5 search ranking
+#
+# Unlike the sections above, these tests assert on the order results come back in:
+# a more relevant document must be returned before a less relevant one.
+# ---------------------------------------------------------------------------
+
+def test_fts5_search_ranks_more_matches_first(tmp_path, db):
+    """A document mentioning the term more often is returned before one mentioning it less.
+
+    All three documents have the same length, so the number of occurrences is what
+    separates them, and the third never mentions the term at all. They are inserted in the
+    opposite order to the expected ranking, so returning the strongest match first cannot be
+    explained by insertion order or rowid.
+    """
+    matches_most = make_scan_doc(tmp_path, title="Most", content="needle needle needle needle needle", doc_name="most.md")
+    matches_least = make_scan_doc(tmp_path, title="Least", content="needle filler filler filler filler", doc_name="least.md")
+    unrelated = make_scan_doc(tmp_path, title="Unrelated", content="filler filler filler filler filler", doc_name="unrelated.md")
+
+    for doc in (unrelated, matches_least, matches_most):
+        db.insert_scan_doc(doc)
+
+    results = db.search_scan_docs("needle")
+
+    assert [doc.path for doc in results] == [matches_most.path, matches_least.path]
