@@ -91,8 +91,8 @@ class Database:
 
     def search_scan_docs(self, query: str):
         cursor = self.conn.execute('''
-            SELECT title, content, content_hash, size, path FROM documents
-            WHERE id in (SELECT rowid FROM documents_fts(?))
+            SELECT d.title, d.content, d.content_hash, d.size, d.path FROM documents AS d JOIN documents_fts(?) ON d.id = documents_fts.rowid
+            ORDER BY rank
         ''', (query,))
         results = []
         for row in cursor:
