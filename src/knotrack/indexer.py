@@ -1,3 +1,10 @@
+"""Keep the stored documents in step with the files on disk.
+
+Documents are written one at a time: a path that is not stored yet is inserted, a document
+whose content hash changed is updated, and an unchanged document is left untouched so that
+re-indexing a large tree stays cheap.
+"""
+
 from .model import ScanDoc
 from .database import Database
 from typing import Iterable

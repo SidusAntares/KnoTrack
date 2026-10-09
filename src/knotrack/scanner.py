@@ -1,9 +1,23 @@
+"""Walk a path and yield one ScanDoc per supported file.
+
+Only markdown files are accepted, and hidden or ignored directories are skipped. Directory
+entries are visited in name order so that indexing the same tree twice produces the same
+result.
+"""
+
 from pathlib import Path
 from .model import ScanDoc
 import hashlib
+
+# ---------------------------------------------------------------------------
+# What gets scanned
+# ---------------------------------------------------------------------------
 support_suffix = [".md"]
 support_ignore_dir = [".git",".vscode","__pycache__"]
 
+# ---------------------------------------------------------------------------
+# Filtering a single path
+# ---------------------------------------------------------------------------
 def filter_doc(path: Path)->bool:
     f = Path(path)
     if not f.exists():
@@ -20,6 +34,9 @@ def filter_doc(path: Path)->bool:
             return False
         return True
 
+# ---------------------------------------------------------------------------
+# Traversal
+# ---------------------------------------------------------------------------
 def scan_doc(path: Path):
     f = Path(path)
     if not filter_doc(f):

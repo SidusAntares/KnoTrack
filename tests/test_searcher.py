@@ -40,8 +40,7 @@ def test_search_documents_with_results(tmp_path, db):
 
     # Search for documents containing the word "first"
     results = search_documents("first", db)
-    assert len(results) == 1
-    assert results[0] == scan_doc1
+    assert [doc for doc, _ in results] == [scan_doc1]
 
     # Search for documents containing the word "document"
     results = search_documents("document", db)
@@ -84,4 +83,4 @@ def test_search_documents_limit_returns_top_ranked(tmp_path, db):
 
     results = search_documents("needle", db, limit=2)
 
-    assert [doc.path for doc in results] == [best.path, middle.path]
+    assert [doc.path for doc, _ in results] == [best.path, middle.path]
