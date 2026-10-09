@@ -1,3 +1,9 @@
+"""Apply the caller's result limit to the documents a search returns.
+
+A thin layer over Database.search_scan_docs: the database decides what matches and in which
+order, and this module only caps how many of those results are handed back.
+"""
+
 from .database import Database
 
 def search_documents(query: str,db: Database, limit: int = 20):
@@ -10,7 +16,7 @@ def search_documents(query: str,db: Database, limit: int = 20):
         limit (int, optional): The maximum number of results to return. Defaults to 20.
 
     Returns:
-        list: A list of ScanDoc instances that match the search query.
+        list: The best matching results, each a (ScanDoc, snippet) pair, in ranking order.
     """
     results = db.search_scan_docs(query)
     return results[:limit]

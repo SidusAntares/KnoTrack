@@ -1,3 +1,11 @@
+"""Command line entry point.
+
+`knotrack index <paths>...` scans the given files or directories and stores them, and
+`knotrack search <query>` prints the stored documents that match, best match first. Both
+subcommands accept `--db` so they can work on a database other than the default
+`.knotrack.db`.
+"""
+
 import argparse
 from pathlib import Path
 
@@ -5,6 +13,10 @@ from .scanner import scan_doc
 from .indexer import index_documents
 from .searcher import search_documents
 from .database import Database
+
+# ---------------------------------------------------------------------------
+# Command line definition
+# ---------------------------------------------------------------------------
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Knotrack CLI")
@@ -47,6 +59,10 @@ def main(argv=None):
 
     args.func(args)
 
+# ---------------------------------------------------------------------------
+# Command implementations
+# ---------------------------------------------------------------------------
+
 def index_command(args):
     db = Database(args.db)
     documents = []
@@ -59,7 +75,9 @@ def search_command(args):
     db = Database(args.db)
     search_results = search_documents(args.query, db, args.limit)
     for result in search_results:
-        print(f"Title: {result.title} \n \
-            Path: {result.path} \n \
-            Size: {result.size} bytes\n")
+        # result is a tuple of (ScanDoc, snippet)
+        print(f"Title: {result[0].title} \n \
+            Path: {result[0].path} \n \
+            Size: {result[0].size} bytes\n \
+            Snippet: {result[1]}\n")
     db.close()

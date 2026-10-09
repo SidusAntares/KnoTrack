@@ -24,6 +24,15 @@ def make_scan_doc(tmp_path,
         path=tmp_path / doc_name
     )
 
+
+def docs_of(results):
+    """The documents from search results, which pair each document with its snippet."""
+    return [doc for doc, _ in results]
+
+
+def paths_of(results):
+    return {doc.path for doc in docs_of(results)}
+
 # ---------------------------------------------------------------------------
 # Database initialization and document storage
 # ---------------------------------------------------------------------------
@@ -104,15 +113,13 @@ def test_search_scan_doc_by_title(tmp_path, db):
 
     # Search for the scan document by title
     results = db.search_scan_docs("Unique Title")
-    assert len(results) == 1
-    assert results[0] == scan_doc
+    assert docs_of(results) == [scan_doc]
 
 def test_search_scan_doc_by_content(tmp_path, db):
     scan_doc = make_scan_doc(tmp_path, content="Unique Content")
     db.insert_scan_doc(scan_doc)
     results = db.search_scan_docs("Unique Content")
-    assert len(results) == 1
-    assert results[0] == scan_doc
+    assert docs_of(results) == [scan_doc]
 
 def test_search_scan_docs_with_results(tmp_path, db):
     # Create and insert multiple scan documents
@@ -126,8 +133,7 @@ def test_search_scan_docs_with_results(tmp_path, db):
 
     # Search for documents containing the word "first"
     results = db.search_scan_docs("first")
-    assert len(results) == 1
-    assert results[0] == scan_doc1
+    assert docs_of(results) == [scan_doc1]
 
     # Search for documents containing the word "document"
     results = db.search_scan_docs("document")
@@ -138,6 +144,60 @@ def test_search_scan_doc_no_results(tmp_path, db):
     db.insert_scan_doc(scan_doc)
     results = db.search_scan_docs("Nonexistent Query")
     assert len(results) == 0
+
+
+# ---------------------------------------------------------------------------
+# Search snippets
+#
+# Every result pairs a document with a snippet taken from the document body, so these tests
+# separate the two ways a query can match: in the body (the snippet shows it) and in the
+# title only (it does not).
+# ---------------------------------------------------------------------------
+
+def test_search_scan_docs_snippet_contains_content_match(tmp_path, db):
+    """A query found in the document body is shown inside the returned snippet.
+
+    The snippet is the context a caller displays, so a body match has to appear in it - that
+    is what tells the user why the document matched.
+    """
+    doc = make_scan_doc(
+        tmp_path,
+        title="Database Notes",
+        content="SQLite supports full text search using FTS5.",
+    )
+    db.insert_scan_doc(doc)
+
+    results = db.search_scan_docs("FTS5")
+
+    assert len(results) == 1
+    result_doc, snippet = results[0]
+
+    assert result_doc == doc
+    assert isinstance(snippet, str)
+    assert "FTS5" in snippet
+
+
+def test_search_scan_docs_snippet_omits_title_only_match(tmp_path, db):
+    """A query matching only the title still returns the document, without it in the snippet.
+
+    The snippet is built from the body, so a title-only hit leaves the query text out of it
+    even though the document is returned. Asserting that keeps the two kinds of match
+    distinguishable instead of relying on the query showing up in the output either way.
+    """
+    doc = make_scan_doc(
+        tmp_path,
+        title="FTS5 Reference",
+        content="Nothing about indexing here.",
+    )
+    db.insert_scan_doc(doc)
+
+    results = db.search_scan_docs("FTS5")
+
+    assert len(results) == 1
+    result_doc, snippet = results[0]
+
+    assert result_doc == doc
+    assert "FTS5" not in snippet
 
 
 # ---------------------------------------------------------------------------
@@ -193,10 +253,6 @@ def build_database_with_fts5_but_no_triggers(db_path):
     ''')
     database.conn.commit()
     database.close()
-
-
-def paths_of(results):
-    return {doc.path for doc in results}
 
 
 def test_fts5_reopen_keeps_index_in_sync(tmp_path):
@@ -399,4 +455,4 @@ def test_fts5_search_ranks_more_matches_first(tmp_path, db):
 
     results = db.search_scan_docs("needle")
 
-    assert [doc.path for doc in results] == [matches_most.path, matches_least.path]
+    assert [doc.path for doc, _ in results] == [matches_most.path, matches_least.path]
