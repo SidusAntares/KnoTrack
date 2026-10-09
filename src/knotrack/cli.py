@@ -74,10 +74,10 @@ def index_command(args):
 def search_command(args):
     db = Database(args.db)
     search_results = search_documents(args.query, db, args.limit)
-    for result in search_results:
-        # result is a tuple of (ScanDoc, snippet)
-        print(f"Title: {result[0].title} \n \
-            Path: {result[0].path} \n \
-            Size: {result[0].size} bytes\n \
-            Snippet: {result[1]}\n")
+    for doc, snippet in search_results:
+        # search_results is a tuple of (ScanDoc, snippet)
+        print(f"Title: {doc.title} \n \
+            Path: {doc.path} \n \
+            Size: {doc.size} bytes\n \
+            Snippet: {snippet}\n")
     db.close()
